@@ -25,7 +25,7 @@
  *
  * @author  Jos de Jong, <wjosdejong@gmail.com>
  * @version 5.9.5
- * @date    2017-08-26
+ * @date    2017-09-13
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -6206,18 +6206,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	Node._findSchema = function (schema, path) {
 	  var childSchema = schema;
+	  var foundSchema = childSchema;
 
-	  for (var i = 0; i < path.length && childSchema; i++) {
-	    var key = path[i];
-	    if (typeof key === 'string' && childSchema.properties) {
-	      childSchema = childSchema.properties[key] || null
-	    }
-	    else if (typeof key === 'number' && childSchema.items) {
-	      childSchema = childSchema.items
-	    }
+	  var allSchemas = schema.oneOf || schema.anyOf || schema.allOf;
+	  if (!allSchemas) {
+	    allSchemas = [schema];
 	  }
 
-	  return childSchema
+	  for (var j = 0; j < allSchemas.length; j++) {
+	    childSchema = allSchemas[j];
+
+	    for (var i = 0; i < path.length && childSchema; i++) {
+	      var key = path[i];
+
+	      if (typeof key === 'string' && childSchema.properties) {
+	        childSchema = childSchema.properties[key] || null;
+	        if (childSchema) {
+	          foundSchema = Node._findSchema(childSchema, path.slice(i, path.length));
+	        }
+	      }
+	      else if (typeof key === 'number' && childSchema.items) {
+	        childSchema = childSchema.items;
+	        if (childSchema) {
+	          foundSchema = Node._findSchema(childSchema, path.slice(i, path.length));
+	        }
+	      }
+	    }
+
+	  }
+	  return foundSchema
 	};
 
 	/**
@@ -7513,7 +7530,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    }
 
-	    
+
 
 	    // create insert button
 	    var insertSubmenu = [
